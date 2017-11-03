@@ -39,8 +39,8 @@ var randomIndex = Math.floor(Math.random()*jokesArray.length);
 
 console.log(jokesArray[randomIndex]);
 
-
 tweetIt();
+
 setInterval(tweetIt, 1000*60*60*12);
 
 function tweetIt() {
