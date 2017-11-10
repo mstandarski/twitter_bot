@@ -179,7 +179,6 @@ var words = [
    {find: new RegExp('\\bmeeting\\b', 'gi'), replace: 'ménage à trois'},
    {find: new RegExp('\\bscientists\\b', 'gi'), replace: 'Channing Tatum and his friends'},
    {find: new RegExp('\\byou won\'t believe\\b', 'gi'), replace: 'I\'m really sad about'},
-   {find: new RegExp('\\bcourt\\b', 'gi'), replace: 'pizza'},
    {find: new RegExp('\\btea\\b', 'gi'), replace: 'leaf water'},
    {find: new RegExp('\\btweets\\b', 'gi'), replace: 'cries for help'}
 ];
@@ -220,11 +219,11 @@ function fakeNews() {
     });
 }
 
-// setInterval(makeATweet, 1000*5);
+setInterval(makeATweet, 1000*5);
 
 function tweetIt() {
     var tweet = {
-        status: newsSource[randomNewsIndex] + ": " + tweetsArray[randomIndex] + " #fakenews"
+        status: tweetsArray[randomIndex] + " #AlteredHeadline"
     };
     
     T.post('statuses/update', tweet, createTweet);
@@ -240,8 +239,11 @@ function tweetIt() {
 
 function makeATweet() {
     fakeNews();
-    setTimeout(tweetIt(), 1000);
-    console.log(tweetsArray[randomIndex] + " <--- line 244");
+    setTimeout(function() {
+        tweetIt();
+        console.log(tweetsArray[randomIndex] + " <--- line 244");
+        
+    }, 1000)
 }
 
 makeATweet();
