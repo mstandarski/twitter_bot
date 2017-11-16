@@ -1,249 +1,248 @@
-var Twit = require('twit');
-var config = require('./config');
-var T = new Twit(config);
+const Twit = require('twit');
+const rp = require('request-promise');
+const config = require('./config');
 
-var rp = require('request-promise');
+let gHeadlines = []; // global array for passing headlines around. I use g for global. I use UPPERCASE for fixed constants like let PORT = 80 and _prop for 'hidden' object props just how I do it.
+let gDisableRealTweeting = true; // global flag to turn off tweeting (mainly for debugging)
 
-var apiKey = "";
-
-var jokesArray = [
-    "Breaking News: Bill Gates has agreed to pay for Trump's wall - On the condition he gets to install windows.",
-    "Why is EA the worst gaming company in America? Because Ubisoft is in France.",
-    "What do you call a book club that's been stuck on one book for years? Church",
-    "Three conspiracy theorists walk into a bar - You can't tell me that's just a coincidence.",
-    "Steve Jobs would've been a better president than Trump. But I guess comparing apples to oranges is unfair.",
-    "Why will congress never impeach Trump? Republicans always insist on carrying a baby to full term.",
-    "Why is Peter Pan always flying? He Neverlands.",
-    "What’s the difference between a politician and a flying pig? The letter F.",
-    "Jehovah's Witnesses don't celebrate Halloween. I guess they don't appreciate random people coming up to their door.",
-    "The Only Thing Flat-Earthers Fear.....is sphere itself.",
-    "If a tree falls in the forest and no one is around to hear it...then my illegal logging business is a success.",
-    "What do you call an emo a capella group? Self Harmony",
-    "How do you break up two blind guys fighting? Yell, 'My money's on the guy with the knife!'",
-    "Have you guys ever heard of the crazy Mexican Train Killer? He had... Loco Motives",
-    "why was Pavlov's hair so soft? Classical conditioning",
-    "What's brown and rhymes with Snoop? Dr. Dre",
-    "Did you hear Donald Trump wants to ban the sale of pre-shredded cheese? He's going to make America grate again.",
-    "I named my eraser Confidence. Because it gets smaller after every mistake I make.",
-    "I've been diagnosed with a chronic fear of giants…Feefiphobia…",
-    "Why did the sitcom about airplanes never take off? Because the pilot was terrible.",
-    "How many tickles does it take to make an octopus laugh? Ten tickles",
-    "If I bought a balloon for $0.99...How much should I sell it for when I adjust for inflation?"
+const gReplacements = [  // I removed the regular expressions tokens. They are put back later, but this is way easier to understand and edit
+    {find: 'nasa', replace: 'nazgul'},
+    {find: 'harvard', replace: 'Hogwarts'},
+    {find: 'eating', replace: 'farting'},
+    {find: 'video', replace: 'moving picture'},
+    {find: 'secret', replace: 'not-so-secret'},
+    {find: 'politician', replace: 'lizard person'},
+    {find: 'politicians', replace: 'lizard people'},
+    {find: 'millenial', replace: 'snake person'},
+    {find: 'millenials', replace: 'snake people'},
+    {find: 'putin', replace: 'putin (peace be upon him)'},
+    {find: 'investors', replace: 'alchemists'},
+    {find: 'sources', replace: 'the intern'},
+    {find: 'cloud', replace: 'butt'},
+    {find: 'economy', replace: 'angry giant'},
+    {find: 'user', replace: 'victim'},
+    {find: 'russian', replace: 'person with tall, fuzzy hat'},
+    {find: 'russians', replace: 'bears on unicycles'},
+    {find: 'ghost', replace: 'Pillsbury dough boy'},
+    {find: 'atheist', replace: 'jelly donut'},
+    {find: 'jailed', replace: 'thrown in dungeon'},
+    {find: 'dog', replace: 'Snoop Dogg'},
+    {find: 'angry', replace: 'miffed'},
+    {find: 'government', replace: 'Illuminati'},
+    {find: 'riot', replace: 'hot yoga session'},
+    {find: 'idetective', replace: 'man wearing a cape'},
+    {find: 'marathon', replace: 'Conga line'},
+    {find: 'passengers', replace: 'stuffed animals'},
+    {find: 'vegetarian', replace: 'loud mouth'},
+    {find: 'judge', replace: 'Judge Judy'},
+    {find: 'prison', replace: 'dungeon'},
+    {find: 'Donald Trump', replace: 'someone with tiny hands'},
+    {find: 'Trump', replace: 'a man with tiny hands'},
+    {find: 'witnesses', replace: 'these dudes I know'},
+    {find: 'allegedly', replace: 'kinda probably'},
+    {find: 'new study', replace: 'tumblr post'},
+    {find: 'rebuild', replace: 'avenge'},
+    {find: 'space', replace: 'spaaace'},
+    {find: 'google glass', replace: 'virtual boy'},
+    {find: 'smartphone', replace: 'Pokédex'},
+    {find: 'electric', replace: 'atomic'},
+    {find: 'senator', replace: 'elf-lord'},
+    {find: 'election', replace: 'eating contest'},
+    {find: 'congressional leaders', replace: 'river spirits'},
+    {find: 'homeland security', replace: 'homestar runner'},
+    {find: 'could not be reached for comment', replace: 'is guilty and everyone knows it'},
+    {find: 'debate', replace: 'dance-off'},
+    {find: 'self driving', replace: 'uncontrollably swerving'},
+    {find: 'poll', replace: 'psychic reading'},
+    {find: 'candidate', replace: 'airbender'},
+    {find: 'drone', replace: 'dog'},
+    {find: 'vows to', replace: 'probably won\'t'},
+    {find: 'at large', replace: 'very large'},
+    {find: 'successfully', replace: 'suddenly'},
+    {find: 'expands', replace: 'physically expands'},
+    {find: '(first|second|third)-degree', replace: 'friggin awful'},
+    {find: 'an unknown number', replace: 'like hundreds'},
+    {find: 'front runner', replace: 'blade runner'},
+    {find: 'global', replace: 'spherical'},
+    {find: 'years', replace: 'minutes'},
+    {find: 'no indication', replace: 'lots of signs'},
+    {find: 'urged restraint by', replace: 'drunkenly egged on'},
+    {find: 'horsepower', replace: 'tons of horsemeat'},
+    {find: 'gaffe', replace: 'magic spell'},
+    {find: 'ancient', replace: 'haunted'},
+    {find: 'star[- ]studded', replace: 'blood soaked'},
+    {find: 'remains to be seen', replace: 'will never be known'},
+    {find: 'silver bullet', replace: 'way to kill warewolves'},
+    {find: 'subway system', replace: 'tunnels I found'},
+    {find: 'surprising', replace: 'surprising (but not to me)'},
+    {find: 'wars of words', replace: 'interplanetary war'},
+    {find: 'tension', replace: 'sexual tension'},
+    {find: 'cautiously optimistic', replace: 'delusional'},
+    {find: 'doctor who', replace: 'The Big Bang Theory'},
+    {find: 'win votes', replace: 'find Pokemon'},
+    {find: 'behind the headlines', replace: 'beyond the grave'},
+    {find: 'e[- ]?mail', replace: 'poem'},
+    {find: 'facebook post', replace: 'poem'},
+    {find: 'facebook ceo', replace: 'this guy'},
+    {find: 'latest', replace: 'final'},
+    {find: 'disrupt', replace: 'destroy'},
+    {find: 'meeting', replace: 'ménage à trois'},
+    {find: 'scientists', replace: 'Channing Tatum and his friends'},
+    {find: 'you won\'t believe', replace: 'I\'m really sad about'},
+    {find: 'tea', replace: 'leaf water'},
+    {find: 'tweets', replace: 'cries for help'}
 ];
 
-var newsSource = [
-   "abc-news-au",
-   "al-jazeera-english",
-   "ars-technica",
-   "associated-press",
-   "bbc-news",
-   "bbc-sport",
-   "bloomberg",
-   "breitbart-news",
-   "business-insider",
-   "business-insider-uk",
-   "buzzfeed",
-   "cnbc",
-   "cnn",
-   "daily-mail",
-   "engadget",
-   "entertainment-weekly",
-   "espn",
-   "espn-cric-info",
-   "financial-times",
-   "focus",
-   "football-italia",
-   "fortune",
-   "four-four-two",
-   "fox-sports",
-   "google-news",
-   "hacker-news",
-   "ign",
-   "independent",
-   "mashable",
-   "metro",
-   "mirror",
-   "mtv-news",
-   "mtv-news-uk",
-   "national-geographic",
-   "new-scientist",
-   "newsweek",
-   "new-york-magazine",
-   "nfl-news",
-   "polygon",
-   "recode",
-   "reddit-r-all",
-   "reuters",
-   "spiegel-online",
-   "talksport",
-   "techcrunch",
-   "techradar",
-   "the-economist",
-   "the-guardian-au",
-   "the-guardian-uk",
-   "the-hindu",
-   "the-huffington-post",
-   "the-lad-bible",
-   "the-new-york-times",
-   "the-next-web",
-   "the-sport-bible",
-   "the-telegraph",
-   "the-times-of-india",
-   "the-verge",
-   "the-wall-street-journal",
-   "the-washington-post",
-   "time",
-   "usa-today"
-];
+const botBoopStatusUpdater = function (twitterConfig) {
+    return function (tweatText) {
+        let tweet = {
+            status: tweatText
+        };
 
-var words = [
-   {find: new RegExp('\\bnasa\\b', 'gi'), replace: 'nazgul'},
-   {find: new RegExp('\\bharvard\\b', 'gi'), replace: 'Hogwarts'},
-   {find: new RegExp('\\beating\\b', 'gi'), replace: 'farting'},
-   {find: new RegExp('\\bvideo\\b', 'gi'), replace: 'moving picture'},
-   {find: new RegExp('\\bsecret\\b', 'gi'), replace: 'not-so-secret'},
-   {find: new RegExp('\\bpolitician\\b', 'gi'), replace: 'lizard person'},
-   {find: new RegExp('\\bpoliticians\\b', 'gi'), replace: 'lizard people'},
-   {find: new RegExp('\\bmillenial\\b', 'gi'), replace: 'snake person'},
-   {find: new RegExp('\\bmillenials\\b', 'gi'), replace: 'snake people'},
-   {find: new RegExp('\\bputin\\b', 'gi'), replace: 'putin (peace be upon him)'},
-   {find: new RegExp('\\binvestors\\b', 'gi'), replace: 'alchemists'},
-   {find: new RegExp('\\bsources\\b', 'gi'), replace: 'the intern'},
-   {find: new RegExp('\\bcloud\\b', 'gi'), replace: 'butt'},
-   {find: new RegExp('\\beconomy\\b', 'gi'), replace: 'angry giant'},
-   {find: new RegExp('\\buser\\b', 'gi'), replace: 'victim'},
-   {find: new RegExp('\\brussian\\b', 'gi'), replace: 'person with tall, fuzzy hat'},
-   {find: new RegExp('\\brussians\\b', 'gi'), replace: 'bears on unicycles'},
-   {find: new RegExp('\\bghost\\b', 'gi'), replace: 'Pillsbury dough boy'},
-   {find: new RegExp('\\batheist\\b', 'gi'), replace: 'jelly donut'},
-   {find: new RegExp('\\bjailed\\b', 'gi'), replace: 'thrown in dungeon'},
-   {find: new RegExp('\\bdog\\b', 'gi'), replace: 'Snoop Dogg'},
-   {find: new RegExp('\\bangry\\b', 'gi'), replace: 'miffed'},
-   {find: new RegExp('\\bgovernment\\b', 'gi'), replace: 'Illuminati'},
-   {find: new RegExp('\\briot\\b', 'gi'), replace: 'hot yoga session'},
-   {find: new RegExp('\\bidetective\\b', 'gi'), replace: 'man wearing a cape'},
-   {find: new RegExp('\\bmarathon\\b', 'gi'), replace: 'Conga line'},
-   {find: new RegExp('\\bpassengers\\b', 'gi'), replace: 'stuffed animals'},
-   {find: new RegExp('\\bvegetarian\\b', 'gi'), replace: 'loud mouth'},
-   {find: new RegExp('\\bjudge\\b', 'gi'), replace: 'Judge Judy'},
-   {find: new RegExp('\\bprison\\b', 'gi'), replace: 'dungeon'},
-   {find: new RegExp('\\bDonald Trump\\b', 'gi'), replace: 'someone with tiny hands'},
-   {find: new RegExp('\\bwitnesses\\b', 'gi'), replace: 'these dudes I know'},
-   {find: new RegExp('\\ballegedly\\b', 'gi'), replace: 'kinda probably'},
-   {find: new RegExp('\\bnew study\\b', 'gi'), replace: 'tumblr post'},
-   {find: new RegExp('\\brebuild\\b', 'gi'), replace: 'avenge'},
-   {find: new RegExp('\\bspace\\b', 'gi'), replace: 'spaaace'},
-   {find: new RegExp('\\bgoogle glass\\b', 'gi'), replace: 'virtual boy'},
-   {find: new RegExp('\\bsmartphone\\b', 'gi'), replace: 'Pokédex'},
-   {find: new RegExp('\\belectric\\b', 'gi'), replace: 'atomic'},
-   {find: new RegExp('\\bsenator\\b', 'gi'), replace: 'elf-lord'},
-   {find: new RegExp('\\belection\\b', 'gi'), replace: 'eating contest'},
-   {find: new RegExp('\\bcongressional leaders\\b', 'gi'), replace: 'river spirits'},
-   {find: new RegExp('\\bhomeland security\\b', 'gi'), replace: 'homestar runner'},
-   {find: new RegExp('\\bcould not be reached for comment\\b', 'gi'), replace: 'is guilty and everyone knows it'},
-   {find: new RegExp('\\bdebate\\b', 'gi'), replace: 'dance-off'},
-   {find: new RegExp('\\bself driving\\b', 'gi'), replace: 'uncontrollably swerving'},
-   {find: new RegExp('\\bpoll\\b', 'gi'), replace: 'psychic reading'},
-   {find: new RegExp('\\bcandidate\\b', 'gi'), replace: 'airbender'},
-   {find: new RegExp('\\bdrone\\b', 'gi'), replace: 'dog'},
-   {find: new RegExp('\\bvows to\\b', 'gi'), replace: 'probably won\'t'},
-   {find: new RegExp('\\bat large\\b', 'gi'), replace: 'very large'},
-   {find: new RegExp('\\bsuccessfully\\b', 'gi'), replace: 'suddenly'},
-   {find: new RegExp('\\bexpands\\b', 'gi'), replace: 'physically expands'},
-   {find: new RegExp('\\b(first|second|third)-degree\\b', 'gi'), replace: 'friggin awful'},
-   {find: new RegExp('\\ban unknown number\\b', 'gi'), replace: 'like hundreds'},
-   {find: new RegExp('\\bfront runner\\b', 'gi'), replace: 'blade runner'},
-   {find: new RegExp('\\bglobal\\b', 'gi'), replace: 'spherical'},
-   {find: new RegExp('\\byears\\b', 'gi'), replace: 'minutes'},
-   {find: new RegExp('\\bno indication\\b', 'gi'), replace: 'lots of signs'},
-   {find: new RegExp('\\burged restraint by\\b', 'gi'), replace: 'drunkenly egged on'},
-   {find: new RegExp('\\bhorsepower\\b', 'gi'), replace: 'tons of horsemeat'},
-   {find: new RegExp('\\bgaffe\\b', 'gi'), replace: 'magic spell'},
-   {find: new RegExp('\\bancient\\b', 'gi'), replace: 'haunted'},
-   {find: new RegExp('\\bstar[- ]studded\\b', 'gi'), replace: 'blood soaked'},
-   {find: new RegExp('\\bremains to be seen\\b', 'gi'), replace: 'will never be known'},
-   {find: new RegExp('\\bsilver bullet\\b', 'gi'), replace: 'way to kill warewolves'},
-   {find: new RegExp('\\bsubway system\\b', 'gi'), replace: 'tunnels I found'},
-   {find: new RegExp('\\bsurprising\\b', 'gi'), replace: 'surprising (but not to me)'},
-   {find: new RegExp('\\bwars of words\\b', 'gi'), replace: 'interplanetary war'},
-   {find: new RegExp('\\btension\\b', 'gi'), replace: 'sexual tension'},
-   {find: new RegExp('\\bcautiously optimistic\\b', 'gi'), replace: 'delusional'},
-   {find: new RegExp('\\bdoctor who\\b', 'gi'), replace: 'The Big Bang Theory'},
-   {find: new RegExp('\\bwin votes\\b', 'gi'), replace: 'find Pokemon'},
-   {find: new RegExp('\\bbehind the headlines\\b', 'gi'), replace: 'beyond the grave'},
-   {find: new RegExp('\\be[- ]?mail\\b', 'gi'), replace: 'poem'},
-   {find: new RegExp('\\bfacebook post\\b', 'gi'), replace: 'poem'},
-   {find: new RegExp('\\bfacebook ceo\\b', 'gi'), replace: 'this guy'},
-   {find: new RegExp('\\blatest\\b', 'gi'), replace: 'final'},
-   {find: new RegExp('\\bdisrupt\\b', 'gi'), replace: 'destroy'},
-   {find: new RegExp('\\bmeeting\\b', 'gi'), replace: 'ménage à trois'},
-   {find: new RegExp('\\bscientists\\b', 'gi'), replace: 'Channing Tatum and his friends'},
-   {find: new RegExp('\\byou won\'t believe\\b', 'gi'), replace: 'I\'m really sad about'},
-   {find: new RegExp('\\btea\\b', 'gi'), replace: 'leaf water'},
-   {find: new RegExp('\\btweets\\b', 'gi'), replace: 'cries for help'}
-];
+        console.log(`[${tweet.status}] <-- getting ready to tweet this, line 102`);
 
-var randomNewsIndex = Math.floor(Math.random()*newsSource.length);
+        if (!gDisableRealTweeting) { // I did test this so it does work. You may have noticed a test tweet in your feed
+            twitterConfig.post(
+                'statuses/update', // ideally this should be passed in so you can make this as generic as possible
+                tweet,
+                (err, data, response) => {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        console.log("You used the Twitter machine successfully!");
+                    }
+                });
+        }
+    };
+}(new Twit(config)); // so this takes a Twit config and returns a function which takes text and tweets it. This allows you to have multiple accounts if you want
 
-var options = {
-   uri: 'https://newsapi.org/v1/articles?source=' + newsSource[randomNewsIndex] + '&apiKey='+ apiKey,
-   json: true // Automatically parses the JSON string in the response
+const replaceWords = function (text, replacements) {       // does one thing and one thing only - replaces words. This is an expression not a statement. There are slight differences
+    console.log(`Original text: [${text}] line 120`); // notice the ES6 template strings using ` !!!
+    replacements.forEach(replacement => { // nice simple construction for this kind of thing
+        let regEx = new RegExp("\\b" + replacement.find + "\\b", 'gi');   // yes this is inefficient but it is easier to edit the replacement word array. You can always optimize later
+        text = text.replace(regEx, replacement.replace);
+    });
+    console.log(`New text: [${text}]` + "line 125");
+    return text;
+}
+
+const randInt = function (max) {
+    return Math.floor(Math.random() * max)
 };
 
-var headline;
-var alteredHeadlines;
-var tweetsArray = [];
-var randomIndex = Math.floor(Math.random()*tweetsArray.length);
-
-function fakeNews() {
-    rp(options).then(function (data) {
-        console.log("**********" + data.source + "*********** line 201");
-        for (var i = 0; i < data.articles.length; i++) {
-            for (var h = 0; h < words.length; h++) {
-                headline = data.articles[i].title;
-                alteredHeadlines = headline.replace(words[h].find, words[h].replace);
-
-                if (headline != alteredHeadlines) {
-                    tweetsArray.push(alteredHeadlines);
-                }
-            }
-        }
-        for (var t = 0; t < tweetsArray.length; t++) {
-            console.log(tweetsArray[randomIndex] + " line 213");
-            
-            return tweetsArray[randomIndex];
-        }
-    })
-    .catch(function (err) {
-        console.log(err); // API call failed...
-    });
-}
-
-setInterval(makeATweet, 1000*5);
-
-function tweetIt() {
-    var tweet = {
-        status: tweetsArray[randomIndex] + " #AlteredHeadline"
+function updateHeadlines(newsSource) { // there are so many ways to do this... getHeadlines could itself return a promise. The easiest is just a global variables
+    // Notice I don't call it getHeadlines anymore, because it really isn't returning anything, so I use the more accurate UPDATE
+    const apiKey = "e60ab0b434994aeea38afbd90f90a947";
+    const options = {
+        uri: `https://newsapi.org/v1/articles?source=${newsSource}&apiKey=${apiKey}`,
+        json: true // Automatically parses the JSON string in the response
     };
-    
-    T.post('statuses/update', tweet, createTweet);
 
-    function createTweet(err, data, response) {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log("You used the Twitter machine successfully!");
+    console.log(`Retrieve headlines from ${options.uri} line 141`);
+    rp(options).then(data => {
+        // console.log(data); // if you console log an object BY ITSELF - it will print out the whole object tree!!!! Otherwise you only get [Object object]
+        console.log(`${data.articles.length} articles received from ${options.uri} line 144`);
+
+        let titles = data.articles.map(a => a.title); // this is an array of all the article titles (in one line!)
+        // So for MY design (maybe not what you had) I select 1 random title and push it into the array
+        // This is thread-safe because JS is single threaded although it still feels weird to NOT have to lock this at all???
+        if (titles.includes(gReplacements.find)) {
+            
         }
-    }
+        gHeadlines.push(titles[randInt(titles.length)]);
+        console.log(gHeadlines.length + " <-- this is how many titles/headlines is in the gHeadlines array, line 150")
+        for (var i = 0; i < gHeadlines.length; i++) {
+            console.log("this is a value in gHeadlines ---> " + gHeadlines[i]);
+            
+        }
+    }).catch(err => console.log(err));
+
+    console.log("Exiting getHeadlines() line 152");
 }
 
-function makeATweet() {
-    fakeNews();
-    setTimeout(function() {
-        tweetIt();
-        console.log(tweetsArray[randomIndex] + " <--- line 244");
-        
-    }, 1000)
+function updateRandomHeadlines() {
+    const newsSource = [
+        "abc-news-au",
+        "al-jazeera-english",
+        "ars-technica",
+        "associated-press",
+        "bbc-news",
+        "bbc-sport",
+        "bloomberg",
+        "breitbart-news",
+        "business-insider",
+        "business-insider-uk",
+        "buzzfeed",
+        "cnbc",
+        "cnn",
+        "daily-mail",
+        "engadget",
+        "entertainment-weekly",
+        "espn",
+        "espn-cric-info",
+        "financial-times",
+        "football-italia",
+        "fortune",
+        "four-four-two",
+        "fox-sports",
+        "google-news",
+        "hacker-news",
+        "ign",
+        "independent",
+        "mashable",
+        "metro",
+        "mirror",
+        "mtv-news",
+        "mtv-news-uk",
+        "national-geographic",
+        "new-scientist",
+        "newsweek",
+        "new-york-magazine",
+        "nfl-news",
+        "polygon",
+        "recode",
+        "reddit-r-all",
+        "reuters",
+        "talksport",
+        "techcrunch",
+        "techradar",
+        "the-economist",
+        "the-guardian-au",
+        "the-guardian-uk",
+        "the-hindu",
+        "the-huffington-post",
+        "the-lad-bible",
+        "the-new-york-times",
+        "the-next-web",
+        "the-sport-bible",
+        "the-telegraph",
+        "the-times-of-india",
+        "the-verge",
+        "the-wall-street-journal",
+        "the-washington-post",
+        "time",
+        "usa-today"
+    ];
+    updateHeadlines(newsSource[randInt(newsSource.length)]); // randomly select a news source and update the headlines
 }
 
-makeATweet();
+// replaceWords("There was a NASA video at Harvard with a dog.", replacements);
+// getHeadlines("metro");
+
+const makeTweet = function () {
+    // If no headlines, don't do anything
+    if (gHeadlines.length === 0) return;
+    let headline = gHeadlines.pop(); // since they were randomized BEFORE adding you can just pop the headline!
+    headline = replaceWords(headline, gReplacements);
+    botBoopStatusUpdater(headline);
+};
+
+setInterval(makeTweet, 1000 * 20); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
+
+// Now there is one thing left and that is when to run updateHeadlines. You can do it at least 2 ways
+// 1) inside makeTweet, just call updateRandomHeadlines
+// 2) use another setInterval
+// The hard part is getting headlines is async so you can't be sure when or if it will come back
+// So you can just wait or you can wrap the callbacks or return a promise, bascially you have to decide as the designer of the system
+// What I choose was simply to wait
+setInterval(updateRandomHeadlines, 1000 * 10); // get new headlines every 20 seconds
