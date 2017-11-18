@@ -3,7 +3,7 @@ const rp = require('request-promise');
 const config = require('./config');
 
 let gHeadlines = []; // global array for passing headlines around. I use g for global. I use UPPERCASE for fixed constants like let PORT = 80 and _prop for 'hidden' object props just how I do it.
-let gDisableRealTweeting = true; // global flag to turn off tweeting (mainly for debugging)
+let gDisableRealTweeting = false; // global flag to turn off tweeting (mainly for debugging)
 
 const gReplacements = [  // I removed the regular expressions tokens. They are put back later, but this is way easier to understand and edit
     {find: 'nasa', replace: 'nazgul'},
@@ -146,15 +146,15 @@ function updateHeadlines(newsSource) { // there are so many ways to do this... g
         let titles = data.articles.map(a => a.title); // this is an array of all the article titles (in one line!)
         // So for MY design (maybe not what you had) I select 1 random title and push it into the array
         // This is thread-safe because JS is single threaded although it still feels weird to NOT have to lock this at all???
-        if (titles.includes(gReplacements.find)) {
-            
-        }
+
+        let daPicture = data.articles.map(a => a.url);
+        console.log(daPicture)
+
+        //!M! this map function...whats going on here? since I am taking a random headline, how to I then take that specific url
+        //also, change the variable on 150.  Its dumb.
+        
         gHeadlines.push(titles[randInt(titles.length)]);
         console.log(gHeadlines.length + " <-- this is how many titles/headlines is in the gHeadlines array, line 150")
-        for (var i = 0; i < gHeadlines.length; i++) {
-            console.log("this is a value in gHeadlines ---> " + gHeadlines[i]);
-            
-        }
     }).catch(err => console.log(err));
 
     console.log("Exiting getHeadlines() line 152");
@@ -233,11 +233,21 @@ const makeTweet = function () {
     // If no headlines, don't do anything
     if (gHeadlines.length === 0) return;
     let headline = gHeadlines.pop(); // since they were randomized BEFORE adding you can just pop the headline!
-    headline = replaceWords(headline, gReplacements);
-    botBoopStatusUpdater(headline);
+    changedHeadline = replaceWords(headline, gReplacements);
+    
+    if (headline === changedHeadline) {
+        console.log("No words to change...restarting process...");
+        return;
+    };
+
+    //!M! I changed the variable name on 236 from headline.  This way, if there are no words changed in the headlines, nothing will tweet and it will start over.
+
+    botBoopStatusUpdater(changedHeadline);
 };
 
-setInterval(makeTweet, 1000 * 20); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
+
+
+setInterval(makeTweet, 1000 * 10); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
 
 // Now there is one thing left and that is when to run updateHeadlines. You can do it at least 2 ways
 // 1) inside makeTweet, just call updateRandomHeadlines
@@ -245,4 +255,4 @@ setInterval(makeTweet, 1000 * 20); // not sure why the original had a setTimeout
 // The hard part is getting headlines is async so you can't be sure when or if it will come back
 // So you can just wait or you can wrap the callbacks or return a promise, bascially you have to decide as the designer of the system
 // What I choose was simply to wait
-setInterval(updateRandomHeadlines, 1000 * 10); // get new headlines every 20 seconds
+setInterval(updateRandomHeadlines, 1000 * 2); // get new headlines every 20 seconds
