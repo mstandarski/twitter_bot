@@ -147,14 +147,27 @@ function updateHeadlines(newsSource) { // there are so many ways to do this... g
         // So for MY design (maybe not what you had) I select 1 random title and push it into the array
         // This is thread-safe because JS is single threaded although it still feels weird to NOT have to lock this at all???
 
-        let daPicture = data.articles.map(a => a.url);
-        console.log(daPicture)
+        console.log(titles.length + " <---- number of titles/headlines in array")
+        let fixedRandomValue = randInt(titles.length);
+
+        let headlineURL = data.articles[fixedRandomValue].url;
+        //I want to take the url value in the JSON data that corresponds to the random headline.
+        //by calling the randInt() here, I ensure this function runs and a random number is established, but I can then call on that specific random number again to go further into the data.
+
 
         //!M! this map function...whats going on here? since I am taking a random headline, how to I then take that specific url
+        //side note - has the above been resolved with fixedRandomValue?
         //also, change the variable on 150.  Its dumb.
+
+        //I want the tweet to consist of the altered headlines AS WELL AS the link to the article.
+        //Can I do this by putting 'titles' and 'headlineURL' in a variable, and then push THAT into gHeadlines?
+        //(this would mean gHeadlines doesnt really fit as the name of the array, but we can get to that later)
+
+        let headlineAndURL = titles[fixedRandomValue] + " " + headlineURL;
+
+        console.log("LOOK AT ME! " + headlineAndURL);
         
-        gHeadlines.push(titles[randInt(titles.length)]);
-        console.log(gHeadlines.length + " <-- this is how many titles/headlines is in the gHeadlines array, line 150")
+        gHeadlines.push(headlineAndURL);
     }).catch(err => console.log(err));
 
     console.log("Exiting getHeadlines() line 152");
