@@ -90,7 +90,9 @@ const gReplacements = [  // I removed the regular expressions tokens. They are p
     {find: 'scientists', replace: 'Channing Tatum and his friends'},
     {find: 'you won\'t believe', replace: 'I\'m really sad about'},
     {find: 'tea', replace: 'leaf water'},
-    {find: 'tweets', replace: 'cries for help'}
+    {find: 'tweets', replace: 'cries for help'},
+    {find: 'oust', replace: 'cannibalize'}
+    
 ];
 
 const botBoopStatusUpdater = function (twitterConfig) {
@@ -143,31 +145,45 @@ function updateHeadlines(newsSource) { // there are so many ways to do this... g
         // console.log(data); // if you console log an object BY ITSELF - it will print out the whole object tree!!!! Otherwise you only get [Object object]
         console.log(`${data.articles.length} articles received from ${options.uri} line 144`);
 
-        let titles = data.articles.map(a => a.title); // this is an array of all the article titles (in one line!)
+        let titles = data.articles.map(a => {
+            return {headline: a.title, url: a.url};
+         }); // this is an array of all the article titles (in one line!)
         // So for MY design (maybe not what you had) I select 1 random title and push it into the array
         // This is thread-safe because JS is single threaded although it still feels weird to NOT have to lock this at all???
 
-        console.log(titles.length + " <---- number of titles/headlines in array")
+        // console.log(titles)
+
         let fixedRandomValue = randInt(titles.length);
 
-        let headlineURL = data.articles[fixedRandomValue].url;
         //I want to take the url value in the JSON data that corresponds to the random headline.
         //by calling the randInt() here, I ensure this function runs and a random number is established, but I can then call on that specific random number again to go further into the data.
 
 
         //!M! this map function...whats going on here? since I am taking a random headline, how to I then take that specific url
         //side note - has the above been resolved with fixedRandomValue?
-        //also, change the variable on 150.  Its dumb.
 
         //I want the tweet to consist of the altered headlines AS WELL AS the link to the article.
         //Can I do this by putting 'titles' and 'headlineURL' in a variable, and then push THAT into gHeadlines?
         //(this would mean gHeadlines doesnt really fit as the name of the array, but we can get to that later)
 
-        let headlineAndURL = titles[fixedRandomValue] + " " + headlineURL;
+        // let headlineAndURL = titles[fixedRandomValue] + " " + headlineURL;
 
-        console.log("LOOK AT ME! " + headlineAndURL);
+        // console.log("Full headline and URL found here ---> " + headlineAndURL);
         
-        gHeadlines.push(headlineAndURL);
+        gHeadlines.push(titles[randInt(titles.length)]);
+        // console.log(gHeadlines)
+
+        //!M! The problem with headlineAndURL is the url value is later altered if a keyword is found in the url.  How to fix this?
+        //push an object into gHeadlines? ex:
+        // gHeadlines: [
+        //     { "headlines":"Nasa now accepting Harvard graduates", "url":"www.nasa.gov/harvard_news" },
+        //     { "headlines":"blah blah blah", "url":"www.stuff.net/tacos" },
+        //     { "headlines":"this is only a test", "url":"www.test.com/internet" },
+        // ]
+        //another idea: pop the url value in the array out of the array when in makeTweet, alter the remaining array (which would be the headline), then push the previously popped url back to into the array.
+        //https://stackoverflow.com/questions/3568921/how-to-remove-part-of-a-string
+
+
     }).catch(err => console.log(err));
 
     console.log("Exiting getHeadlines() line 152");
@@ -245,22 +261,31 @@ function updateRandomHeadlines() {
 const makeTweet = function () {
     // If no headlines, don't do anything
     if (gHeadlines.length === 0) return;
-    let headline = gHeadlines.pop(); // since they were randomized BEFORE adding you can just pop the headline!
-    changedHeadline = replaceWords(headline, gReplacements);
+    let articleData = gHeadlines.pop(); // since they were randomized BEFORE adding you can just pop the headline!
+    // console.log("266 -->")
+    // console.log(articleData)
+    changedHeadline = replaceWords(articleData.headline, gReplacements);
+    // console.log("269 -->")
+    // console.log(articleData)
+
+    console.log(changedHeadline + " <---- 271, changed headline not in object/array")
     
-    if (headline === changedHeadline) {
+    if (articleData.headline === changedHeadline) {
         console.log("No words to change...restarting process...");
         return;
     };
 
+    articleData = articleData.headline + " " + articleData.url;
+ 
     //!M! I changed the variable name on 236 from headline.  This way, if there are no words changed in the headlines, nothing will tweet and it will start over.
+    //otherwise, the array item in gHeadlines may not contain a word that is alterable.
 
-    botBoopStatusUpdater(changedHeadline);
+    botBoopStatusUpdater(articleData);
 };
 
 
 
-setInterval(makeTweet, 1000 * 10); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
+setInterval(makeTweet, 1000 * 60); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
 
 // Now there is one thing left and that is when to run updateHeadlines. You can do it at least 2 ways
 // 1) inside makeTweet, just call updateRandomHeadlines
@@ -268,4 +293,4 @@ setInterval(makeTweet, 1000 * 10); // not sure why the original had a setTimeout
 // The hard part is getting headlines is async so you can't be sure when or if it will come back
 // So you can just wait or you can wrap the callbacks or return a promise, bascially you have to decide as the designer of the system
 // What I choose was simply to wait
-setInterval(updateRandomHeadlines, 1000 * 2); // get new headlines every 20 seconds
+setInterval(updateRandomHeadlines, 1000 * 10); // get new headlines every x amount of seconds
