@@ -3,7 +3,7 @@ const rp = require('request-promise');
 const config = require('./config');
 
 let gHeadlines = []; // global array for passing headlines around. I use g for global. I use UPPERCASE for fixed constants like let PORT = 80 and _prop for 'hidden' object props just how I do it.
-let gDisableRealTweeting = true; // global flag to turn off tweeting (mainly for debugging)
+let gDisableRealTweeting = false; // global flag to turn off tweeting (mainly for debugging)
 
 const gReplacements = [  // I removed the regular expressions tokens. They are put back later, but this is way easier to understand and edit
     {find: 'nasa', replace: 'nazgul'},
@@ -91,7 +91,9 @@ const gReplacements = [  // I removed the regular expressions tokens. They are p
     {find: 'you won\'t believe', replace: 'I\'m really sad about'},
     {find: 'tea', replace: 'leaf water'},
     {find: 'tweets', replace: 'cries for help'},
-    {find: 'oust', replace: 'cannibalize'}
+    {find: 'oust', replace: 'cannibalize'},
+    {find: 'car', replace: 'Razor scooter'}
+    
     
 ];
 
@@ -136,7 +138,7 @@ function updateHeadlines(newsSource) { // there are so many ways to do this... g
     // Notice I don't call it getHeadlines anymore, because it really isn't returning anything, so I use the more accurate UPDATE
     const apiKey = "e60ab0b434994aeea38afbd90f90a947";
     const options = {
-        uri: `https://newsapi.org/v1/articles?source=cnn&apiKey=${apiKey}`,
+        uri: `https://newsapi.org/v1/articles?source=${newsSource}&apiKey=${apiKey}`,
         json: true // Automatically parses the JSON string in the response
     };
 
@@ -267,22 +269,25 @@ const makeTweet = function () {
     let articleData = gHeadlines.pop(); // since they were randomized BEFORE adding you can just pop the headline!
     console.log("articledata 265 --> ")
     console.log(articleData)
-    let futureTweet = replaceWords(articleData.headline, gReplacements) + " " + articleData.url;
+    let futureTweet = {
+        headline: replaceWords(articleData.headline, gReplacements), 
+        url: articleData.url
+    };
     console.log("futureTweet 268 --> ")
     console.log(futureTweet)
     
         // console.log("269 -->")
     // console.log(articleData)
-
-    console.log("futureTweet, now changed? 276 -->")
     
     if (futureTweet.headline === articleData.headline) {
         console.log("No words to change...restarting process...");
         return;
     };
+
+    futureTweet = futureTweet.headline + " " + futureTweet.url;
+    
     console.log("futureTweet before it is sent out of function 282 --> ")
     console.log(futureTweet)
-    
  
     //!M! I changed the variable name on 236 from headline.  This way, if there are no words changed in the headlines, nothing will tweet and it will start over.
     //otherwise, the array item in gHeadlines may not contain a word that is alterable.
@@ -292,7 +297,7 @@ const makeTweet = function () {
 
 
 
-setInterval(makeTweet, 1000 * 20); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
+setInterval(makeTweet, 1000 * 30); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
 
 // Now there is one thing left and that is when to run updateHeadlines. You can do it at least 2 ways
 // 1) inside makeTweet, just call updateRandomHeadlines
@@ -300,4 +305,4 @@ setInterval(makeTweet, 1000 * 20); // not sure why the original had a setTimeout
 // The hard part is getting headlines is async so you can't be sure when or if it will come back
 // So you can just wait or you can wrap the callbacks or return a promise, bascially you have to decide as the designer of the system
 // What I choose was simply to wait
-setInterval(updateRandomHeadlines, 1000 * 5); // get new headlines every x amount of seconds
+setInterval(updateRandomHeadlines, 1000 * 10); // get new headlines every x amount of seconds
