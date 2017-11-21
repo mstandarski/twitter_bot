@@ -3,7 +3,7 @@ const rp = require('request-promise');
 const config = require('./config');
 
 let gHeadlines = []; // global array for passing headlines around. I use g for global. I use UPPERCASE for fixed constants like let PORT = 80 and _prop for 'hidden' object props just how I do it.
-let gDisableRealTweeting = false; // global flag to turn off tweeting (mainly for debugging)
+let gDisableRealTweeting = true; // global flag to turn off tweeting (mainly for debugging)
 
 const gReplacements = [  // I removed the regular expressions tokens. They are put back later, but this is way easier to understand and edit
     {find: 'nasa', replace: 'nazgul'},
@@ -33,7 +33,7 @@ const gReplacements = [  // I removed the regular expressions tokens. They are p
     {find: 'idetective', replace: 'man wearing a cape'},
     {find: 'marathon', replace: 'Conga line'},
     {find: 'passengers', replace: 'stuffed animals'},
-    {find: 'vegetarian', replace: 'loud mouth'},
+    {find: 'vegetarian', replace: 'uppity'},
     {find: 'judge', replace: 'Judge Judy'},
     {find: 'prison', replace: 'dungeon'},
     {find: 'Donald Trump', replace: 'someone with tiny hands'},
@@ -136,17 +136,20 @@ function updateHeadlines(newsSource) { // there are so many ways to do this... g
     // Notice I don't call it getHeadlines anymore, because it really isn't returning anything, so I use the more accurate UPDATE
     const apiKey = "e60ab0b434994aeea38afbd90f90a947";
     const options = {
-        uri: `https://newsapi.org/v1/articles?source=${newsSource}&apiKey=${apiKey}`,
+        uri: `https://newsapi.org/v1/articles?source=cnn&apiKey=${apiKey}`,
         json: true // Automatically parses the JSON string in the response
     };
 
-    console.log(`Retrieve headlines from ${options.uri} line 141`);
+    // console.log(`Retrieve headlines from ${options.uri} line 141`);
     rp(options).then(data => {
         // console.log(data); // if you console log an object BY ITSELF - it will print out the whole object tree!!!! Otherwise you only get [Object object]
-        console.log(`${data.articles.length} articles received from ${options.uri} line 144`);
+        // console.log(`${data.articles.length} articles received from ${options.uri} line 144`);
 
         let titles = data.articles.map(a => {
-            return {headline: a.title, url: a.url};
+            return {
+                headline: a.title, 
+                url: a.url
+            };
          }); // this is an array of all the article titles (in one line!)
         // So for MY design (maybe not what you had) I select 1 random title and push it into the array
         // This is thread-safe because JS is single threaded although it still feels weird to NOT have to lock this at all???
@@ -186,7 +189,7 @@ function updateHeadlines(newsSource) { // there are so many ways to do this... g
 
     }).catch(err => console.log(err));
 
-    console.log("Exiting getHeadlines() line 152");
+    // console.log("Exiting getHeadlines() line 152");
 }
 
 function updateRandomHeadlines() {
@@ -262,30 +265,34 @@ const makeTweet = function () {
     // If no headlines, don't do anything
     if (gHeadlines.length === 0) return;
     let articleData = gHeadlines.pop(); // since they were randomized BEFORE adding you can just pop the headline!
-    // console.log("266 -->")
-    // console.log(articleData)
-    changedHeadline = replaceWords(articleData.headline, gReplacements);
-    // console.log("269 -->")
+    console.log("articledata 265 --> ")
+    console.log(articleData)
+    let futureTweet = replaceWords(articleData.headline, gReplacements) + " " + articleData.url;
+    console.log("futureTweet 268 --> ")
+    console.log(futureTweet)
+    
+        // console.log("269 -->")
     // console.log(articleData)
 
-    console.log(changedHeadline + " <---- 271, changed headline not in object/array")
+    console.log("futureTweet, now changed? 276 -->")
     
-    if (articleData.headline === changedHeadline) {
+    if (futureTweet.headline === articleData.headline) {
         console.log("No words to change...restarting process...");
         return;
     };
-
-    articleData = articleData.headline + " " + articleData.url;
+    console.log("futureTweet before it is sent out of function 282 --> ")
+    console.log(futureTweet)
+    
  
     //!M! I changed the variable name on 236 from headline.  This way, if there are no words changed in the headlines, nothing will tweet and it will start over.
     //otherwise, the array item in gHeadlines may not contain a word that is alterable.
 
-    botBoopStatusUpdater(articleData);
+    botBoopStatusUpdater(futureTweet);
 };
 
 
 
-setInterval(makeTweet, 1000 * 60); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
+setInterval(makeTweet, 1000 * 20); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
 
 // Now there is one thing left and that is when to run updateHeadlines. You can do it at least 2 ways
 // 1) inside makeTweet, just call updateRandomHeadlines
@@ -293,4 +300,4 @@ setInterval(makeTweet, 1000 * 60); // not sure why the original had a setTimeout
 // The hard part is getting headlines is async so you can't be sure when or if it will come back
 // So you can just wait or you can wrap the callbacks or return a promise, bascially you have to decide as the designer of the system
 // What I choose was simply to wait
-setInterval(updateRandomHeadlines, 1000 * 10); // get new headlines every x amount of seconds
+setInterval(updateRandomHeadlines, 1000 * 5); // get new headlines every x amount of seconds
