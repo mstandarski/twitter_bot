@@ -142,56 +142,24 @@ function updateHeadlines(newsSource) { // there are so many ways to do this... g
         json: true // Automatically parses the JSON string in the response
     };
 
-    // console.log(`Retrieve headlines from ${options.uri} line 141`);
+    console.log(`Retrieve headlines from ${options.uri} line 141`);
     rp(options).then(data => {
-        // console.log(data); // if you console log an object BY ITSELF - it will print out the whole object tree!!!! Otherwise you only get [Object object]
-        // console.log(`${data.articles.length} articles received from ${options.uri} line 144`);
+        console.log(`${data.articles.length} articles received from ${options.uri} line 144`);
 
         let titles = data.articles.map(a => {
             return {
                 headline: a.title, 
                 url: a.url
             };
-         }); // this is an array of all the article titles (in one line!)
-        // So for MY design (maybe not what you had) I select 1 random title and push it into the array
-        // This is thread-safe because JS is single threaded although it still feels weird to NOT have to lock this at all???
-
-        // console.log(titles)
-
-        let fixedRandomValue = randInt(titles.length);
-
-        //I want to take the url value in the JSON data that corresponds to the random headline.
-        //by calling the randInt() here, I ensure this function runs and a random number is established, but I can then call on that specific random number again to go further into the data.
-
-
-        //!M! this map function...whats going on here? since I am taking a random headline, how to I then take that specific url
-        //side note - has the above been resolved with fixedRandomValue?
-
-        //I want the tweet to consist of the altered headlines AS WELL AS the link to the article.
-        //Can I do this by putting 'titles' and 'headlineURL' in a variable, and then push THAT into gHeadlines?
-        //(this would mean gHeadlines doesnt really fit as the name of the array, but we can get to that later)
-
-        // let headlineAndURL = titles[fixedRandomValue] + " " + headlineURL;
-
-        // console.log("Full headline and URL found here ---> " + headlineAndURL);
+         });
+         //by organizing the info in an object that holds both the headline and url, I can later target JUST the headline to be changed when we get into makeTweet()
         
         gHeadlines.push(titles[randInt(titles.length)]);
-        // console.log(gHeadlines)
-
-        //!M! The problem with headlineAndURL is the url value is later altered if a keyword is found in the url.  How to fix this?
-        //push an object into gHeadlines? ex:
-        // gHeadlines: [
-        //     { "headlines":"Nasa now accepting Harvard graduates", "url":"www.nasa.gov/harvard_news" },
-        //     { "headlines":"blah blah blah", "url":"www.stuff.net/tacos" },
-        //     { "headlines":"this is only a test", "url":"www.test.com/internet" },
-        // ]
-        //another idea: pop the url value in the array out of the array when in makeTweet, alter the remaining array (which would be the headline), then push the previously popped url back to into the array.
-        //https://stackoverflow.com/questions/3568921/how-to-remove-part-of-a-string
-
+        console.log(gHeadlines)
 
     }).catch(err => console.log(err));
 
-    // console.log("Exiting getHeadlines() line 152");
+    console.log("Exiting getHeadlines() line 152");
 }
 
 function updateRandomHeadlines() {
@@ -260,44 +228,28 @@ function updateRandomHeadlines() {
     updateHeadlines(newsSource[randInt(newsSource.length)]); // randomly select a news source and update the headlines
 }
 
-// replaceWords("There was a NASA video at Harvard with a dog.", replacements);
-// getHeadlines("metro");
-
 const makeTweet = function () {
     // If no headlines, don't do anything
     if (gHeadlines.length === 0) return;
     let articleData = gHeadlines.pop(); // since they were randomized BEFORE adding you can just pop the headline!
-    console.log("articledata 265 --> ")
-    console.log(articleData)
+    
     let futureTweet = {
         headline: replaceWords(articleData.headline, gReplacements), 
         url: articleData.url
     };
-    console.log("futureTweet 268 --> ")
-    console.log(futureTweet)
-    
-        // console.log("269 -->")
-    // console.log(articleData)
-    
+        
     if (futureTweet.headline === articleData.headline) {
         console.log("No words to change...restarting process...");
         return;
     };
 
-    futureTweet = futureTweet.headline + " " + futureTweet.url;
-    
-    console.log("futureTweet before it is sent out of function 282 --> ")
-    console.log(futureTweet)
- 
-    //!M! I changed the variable name on 236 from headline.  This way, if there are no words changed in the headlines, nothing will tweet and it will start over.
-    //otherwise, the array item in gHeadlines may not contain a word that is alterable.
-
+    futureTweet = futureTweet.headline + " " + futureTweet.url; 
     botBoopStatusUpdater(futureTweet);
 };
 
 
 
-setInterval(makeTweet, 1000 * 30); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
+setInterval(makeTweet, 1000 * 60 * 5); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
 
 // Now there is one thing left and that is when to run updateHeadlines. You can do it at least 2 ways
 // 1) inside makeTweet, just call updateRandomHeadlines
@@ -305,4 +257,4 @@ setInterval(makeTweet, 1000 * 30); // not sure why the original had a setTimeout
 // The hard part is getting headlines is async so you can't be sure when or if it will come back
 // So you can just wait or you can wrap the callbacks or return a promise, bascially you have to decide as the designer of the system
 // What I choose was simply to wait
-setInterval(updateRandomHeadlines, 1000 * 10); // get new headlines every x amount of seconds
+setInterval(updateRandomHeadlines, 1000 * 60); // get new headlines every x amount of seconds
