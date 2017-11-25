@@ -9,7 +9,6 @@ const gReplacements = [  // I removed the regular expressions tokens. They are p
     {find: 'nasa', replace: 'nazgul'},
     {find: 'harvard', replace: 'Hogwarts'},
     {find: 'eating', replace: 'farting'},
-    {find: 'video', replace: 'moving picture'},
     {find: 'secret', replace: 'not-so-secret'},
     {find: 'politician', replace: 'lizard person'},
     {find: 'politicians', replace: 'lizard people'},
