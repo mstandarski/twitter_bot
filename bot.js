@@ -35,8 +35,8 @@ const gReplacements = [  // I removed the regular expressions tokens. They are p
     {find: 'vegetarian', replace: 'uppity'},
     {find: 'judge', replace: 'Judge Judy'},
     {find: 'prison', replace: 'dungeon'},
-    {find: 'Donald Trump', replace: 'someone with tiny hands'},
-    {find: 'Trump', replace: 'a man with tiny hands'},
+    // {find: 'Donald Trump', replace: 'someone with tiny hands'},
+    // {find: 'Trump', replace: 'a man with tiny hands'},
     {find: 'witnesses', replace: 'these dudes I know'},
     {find: 'allegedly', replace: 'kinda probably'},
     {find: 'new study', replace: 'tumblr post'},
@@ -248,7 +248,7 @@ const makeTweet = function () {
 
 
 
-setInterval(makeTweet, 1000 * 60 * 5); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
+setInterval(makeTweet, 1000 * 60 * 10); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
 
 // Now there is one thing left and that is when to run updateHeadlines. You can do it at least 2 ways
 // 1) inside makeTweet, just call updateRandomHeadlines
@@ -256,4 +256,4 @@ setInterval(makeTweet, 1000 * 60 * 5); // not sure why the original had a setTim
 // The hard part is getting headlines is async so you can't be sure when or if it will come back
 // So you can just wait or you can wrap the callbacks or return a promise, bascially you have to decide as the designer of the system
 // What I choose was simply to wait
-setInterval(updateRandomHeadlines, 1000 * 60); // get new headlines every x amount of seconds
+setInterval(updateRandomHeadlines, 1000 * 60 * 3); // get new headlines every x amount of seconds
