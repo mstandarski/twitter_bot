@@ -3,7 +3,7 @@ const rp = require('request-promise');
 const config = require('./config');
 
 let gHeadlines = []; // global array for passing headlines around. I use g for global. I use UPPERCASE for fixed constants like let PORT = 80 and _prop for 'hidden' object props just how I do it.
-let gDisableRealTweeting = false; // global flag to turn off tweeting (mainly for debugging)
+let gDisableRealTweeting = true; // global flag to turn off tweeting (mainly for debugging)
 
 const gReplacements = [  // I removed the regular expressions tokens. They are put back later, but this is way easier to understand and edit
     {find: 'nasa', replace: 'nazgul'},
@@ -37,10 +37,10 @@ const gReplacements = [  // I removed the regular expressions tokens. They are p
 
     {find: 'Elon Musk', replace: 'Martian Native Attempting to Get Home'},
     {find: 'bitcoin', replace: 'Magic Internet Money'},
-    {find: 'President Donald Trump', replace: 'A Man With Tiny Hands'},
-    {find: 'Donald Trump', replace: 'A Man With Tiny Hands'},    
-    {find: 'President Trump', replace: 'A Man With Tiny Hands'},
-    {find: 'Trump', replace: 'A Man With Tiny Hands'},
+    // {find: 'President Donald Trump', replace: 'A Man With Tiny Hands'},
+    // {find: 'Donald Trump', replace: 'A Man With Tiny Hands'},    
+    // {find: 'President Trump', replace: 'A Man With Tiny Hands'},
+    // {find: 'Trump', replace: 'A Man With Tiny Hands'},
     {find: 'wild fires', replace: 'wrath of God'},
     {find: 'wildfires', replace: 'wrath of God'},
     {find: 'wildfire', replace: 'wrath of God'},
@@ -239,7 +239,7 @@ function updateRandomHeadlines() {
     updateHeadlines(newsSource[randInt(newsSource.length)]); // randomly select a news source and update the headlines
 }
 
-const makeTweet = function () {
+function makeTweet() {
     // If no headlines, don't do anything
     if (gHeadlines.length === 0) return;
     let articleData = gHeadlines.pop(); // since they were randomized BEFORE adding you can just pop the headline!
@@ -251,6 +251,7 @@ const makeTweet = function () {
         
     if (futureTweet.headline === articleData.headline) {
         console.log("No words to change...restarting process...");
+        makeTweet();
         return;
     };
 
@@ -258,9 +259,13 @@ const makeTweet = function () {
     botBoopStatusUpdater(futureTweet);
 };
 
+const clearArray = function() {
+    gHeadlines = [];
+    console.log("array cleared");
+}
 
 
-setInterval(makeTweet, 1000 * 60 * 20); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
+setInterval(makeTweet, 1000 * 30); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
 
 // Now there is one thing left and that is when to run updateHeadlines. You can do it at least 2 ways
 // 1) inside makeTweet, just call updateRandomHeadlines
@@ -268,4 +273,5 @@ setInterval(makeTweet, 1000 * 60 * 20); // not sure why the original had a setTi
 // The hard part is getting headlines is async so you can't be sure when or if it will come back
 // So you can just wait or you can wrap the callbacks or return a promise, bascially you have to decide as the designer of the system
 // What I choose was simply to wait
-setInterval(updateRandomHeadlines, 1000 * 60); // get new headlines every x amount of seconds
+setInterval(updateRandomHeadlines, 1000 * 2); // get new headlines every x amount of seconds
+setInterval(clearArray, 1000 * 60 * 2);
