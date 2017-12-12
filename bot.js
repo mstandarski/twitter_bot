@@ -48,6 +48,8 @@ const gReplacements = [  // I removed the regular expressions tokens. They are p
     {find: 'pursuit of happiness', replace: 'Pursuit of Poontang'},
     {find: 'Republican', replace: 'Gnome'},
     {find: 'Democrat', replace: 'Leprechaun'},
+    {find: 'billionaire', replace: 'poor person'},
+    {find: 'billionaires', replace: 'poor people'},
 
     {find: 'witnesses', replace: 'these dudes I know'},
     {find: 'allegedly', replace: 'kinda probably'},
@@ -58,6 +60,9 @@ const gReplacements = [  // I removed the regular expressions tokens. They are p
     {find: 'smartphone', replace: 'Pokédex'},
     {find: 'electric', replace: 'atomic'},
     {find: 'senator', replace: 'elf-lord'},
+    {find: 'sen.', replace: 'elf-lord'},
+    
+
     {find: 'election', replace: 'eating contest'},
     {find: 'congressional leaders', replace: 'river spirits'},
     {find: 'homeland security', replace: 'homestar runner'},
@@ -265,7 +270,7 @@ const clearArray = function() {
 }
 
 
-setInterval(makeTweet, 1000 * 30); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
+setInterval(makeTweet, 1000 * 60 * 60); // not sure why the original had a setTimeout. Seemed like interval was all I needed.
 
 // Now there is one thing left and that is when to run updateHeadlines. You can do it at least 2 ways
 // 1) inside makeTweet, just call updateRandomHeadlines
@@ -273,5 +278,5 @@ setInterval(makeTweet, 1000 * 30); // not sure why the original had a setTimeout
 // The hard part is getting headlines is async so you can't be sure when or if it will come back
 // So you can just wait or you can wrap the callbacks or return a promise, bascially you have to decide as the designer of the system
 // What I choose was simply to wait
-setInterval(updateRandomHeadlines, 1000 * 2); // get new headlines every x amount of seconds
-setInterval(clearArray, 1000 * 60 * 2);
+setInterval(updateRandomHeadlines, 1000 * 60); // get new headlines every x amount of seconds
+setInterval(clearArray, 1000 * 60 * 60 * 24);
