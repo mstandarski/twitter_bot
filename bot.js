@@ -3,7 +3,7 @@ const rp = require('request-promise');
 const config = require('./config');
 
 let gHeadlines = []; // global array for passing headlines around. I use g for global. I use UPPERCASE for fixed constants like let PORT = 80 and _prop for 'hidden' object props just how I do it.
-let gDisableRealTweeting = true; // global flag to turn off tweeting (mainly for debugging)
+let gDisableRealTweeting = false; // global flag to turn off tweeting (mainly for debugging)
 
 const gReplacements = [  // I removed the regular expressions tokens. They are put back later, but this is way easier to understand and edit
     {find: 'nasa', replace: 'nazgul'},
